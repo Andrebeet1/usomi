@@ -1,26 +1,19 @@
-// 📦 Importation des modules nécessaires
-import express from 'express';
 import { Telegraf } from 'telegraf';
 import { config } from 'dotenv';
 import OpenAI from 'openai';
+import express from 'express';
 
-// 🔐 Chargement des variables d'environnement
 config();
 
-// 📌 Initialisation du bot Telegram avec le token
 const bot = new Telegraf(process.env.BOT_TOKEN);
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// 🧠 Initialisation du client OpenAI
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-// 🎉 Commande /start
+// ✅ Commande /start
 bot.start((ctx) => {
   ctx.reply("👋 Salut ! Je suis un bot connecté à OpenAI. Pose-moi une question.");
 });
 
-// 📩 Répond à tout message texte
+// 📩 Répond aux messages
 bot.on('text', async (ctx) => {
   const userMessage = ctx.message.text;
 
@@ -37,25 +30,29 @@ bot.on('text', async (ctx) => {
 
     const reply = completion.choices[0].message.content;
     ctx.reply(reply);
-
   } catch (error) {
-    console.error("❌ Erreur OpenAI :", error);
-    ctx.reply("⚠️ Une erreur est survenue avec OpenAI.");
+    console.error("❌ Erreur OpenAI :", error.response?.data || error.message);
+    ctx.reply("⚠️ Une erreur est survenue avec OpenAI. " + (error.response?.data?.error?.message || error.message));
   }
 });
 
-// 🚀 Création du serveur Express
-const app = express();
-app.use(express.json());
-
-// 📬 Définir le chemin du webhook
-app.use(bot.webhookCallback('/telegram'));
-
-// 📡 Définir le webhook Telegram (à faire à chaque démarrage)
-bot.telegram.setWebhook(`https://usomi.onrender.com/telegram`);
-
-// 🌐 Lancement du serveur HTTP (Render utilise PORT automatiquement)
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`✅ Serveur lancé sur le port ${PORT}`);
+// ✅ Lance le bot
+bot.launch().then(() => {
+  console.log("✅ Le bot Telegram est lancé !");
 });
+
+// ✅ Express pour Render
+const app = express();
+const port = process.env.PORT || 10000;
+
+app.get("/", (req, res) => {
+  res.send("✅ Serveur en ligne.");
+});
+
+app.listen(port, () => {
+  console.log(`✅ Serveur lancé sur le port ${port}`);
+});
+
+// 🔚 Interruption
+process.once("SIGINT", () => bot.stop("SIGINT"));
+process.once("SIGTERM", () => bot.stop("SIGTERM"));
