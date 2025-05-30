@@ -1,29 +1,72 @@
-import { Telegraf } from 'telegraf';
+import { Telegraf, Markup } from 'telegraf';
 import { config } from 'dotenv';
 import OpenAI from 'openai';
 import express from 'express';
+import fetch from 'node-fetch'; // pour ping Render
 
 config();
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENROUTER_API_KEY,         // clé OpenRouter ici
-  baseURL: 'https://openrouter.ai/api/v1',        // URL OpenRouter
+  apiKey: process.env.OPENROUTER_API_KEY,
+  baseURL: 'https://openrouter.ai/api/v1',
 });
 
-// ✅ Commande /start
+// ✅ Commande /start avec bouton
 bot.start((ctx) => {
-  ctx.reply("👋 Salut ! Je suis un bot connecté à OpenRouter. Pose-moi une question.");
+  ctx.reply(
+    "👋 Salut ! Clique sur le bouton ci-dessous pour démarrer le bot :",
+    Markup.inlineKeyboard([
+      Markup.button.callback("🚀 Démarrer UsomiBot", "wake_up_bot")
+    ])
+  );
 });
 
-// 📩 Répond aux messages
+// 📦 Gère le bouton
+bot.action("wake_up_bot", async (ctx) => {
+  await ctx.answerCbQuery(); // pour retirer le "chargement" de Telegram
+  await ctx.reply("⏳ Activation du bot en cours...");
+
+  // ➤ Barre de progression simulée
+  const progressBars = [
+    "🟩⬛⬛⬛⬛⬛⬛⬛⬛⬛ 10%",
+    "🟩🟩⬛⬛⬛⬛⬛⬛⬛⬛ 20%",
+    "🟩🟩🟩⬛⬛⬛⬛⬛⬛⬛ 30%",
+    "🟩🟩🟩🟩⬛⬛⬛⬛⬛⬛ 40%",
+    "🟩🟩🟩🟩🟩⬛⬛⬛⬛⬛ 50%",
+    "🟩🟩🟩🟩🟩🟩⬛⬛⬛⬛ 60%",
+    "🟩🟩🟩🟩🟩🟩🟩⬛⬛⬛ 70%",
+    "🟩🟩🟩🟩🟩🟩🟩🟩⬛⬛ 80%",
+    "🟩🟩🟩🟩🟩🟩🟩🟩🟩⬛ 90%",
+    "🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 100%",
+  ];
+
+  for (let bar of progressBars) {
+    await ctx.reply(bar);
+    await new Promise(resolve => setTimeout(resolve, 500)); // 0.5s
+  }
+
+  // ➤ Ping le serveur pour le réveiller
+  try {
+    const response = await fetch('https://usomi.onrender.com');
+    if (response.ok) {
+      await ctx.reply("✅ UsomiBot est prêt !");
+    } else {
+      await ctx.reply("⚠️ Erreur en réveillant le bot.");
+    }
+  } catch (err) {
+    await ctx.reply("❌ Serveur injoignable : " + err.message);
+  }
+});
+
+// 🧠 Répond aux messages texte
 bot.on('text', async (ctx) => {
   const userMessage = ctx.message.text;
 
   try {
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',    // modèle compatible OpenRouter (exemple)
+      model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: "Tu es un assistant intelligent et amical." },
         { role: 'user', content: userMessage },
@@ -40,11 +83,6 @@ bot.on('text', async (ctx) => {
   }
 });
 
-// ✅ Lance le bot
-bot.launch().then(() => {
-  console.log("✅ Le bot Telegram est lancé !");
-});
-
 // ✅ Express pour Render
 const app = express();
 const port = process.env.PORT || 10000;
@@ -57,6 +95,6 @@ app.listen(port, () => {
   console.log(`✅ Serveur lancé sur le port ${port}`);
 });
 
-// 🔚 Interruption
+// 🔚 Arrêt propre
 process.once("SIGINT", () => bot.stop("SIGINT"));
 process.once("SIGTERM", () => bot.stop("SIGTERM"));
