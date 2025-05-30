@@ -1,0 +1,14 @@
+# Node modules
+node_modules/
+
+# Clés secrètes
+.env
+
+# Fichiers temporaires
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dossiers système
+.DS_Store
