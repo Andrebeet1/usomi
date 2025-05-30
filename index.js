@@ -2,63 +2,58 @@ import { Telegraf, Markup } from 'telegraf';
 import { config } from 'dotenv';
 import OpenAI from 'openai';
 import express from 'express';
-import fetch from 'node-fetch'; // ➕ Installe-le si ce n’est pas déjà fait : npm install node-fetch
+import fetch from 'node-fetch';
 
 config();
 
+// Initialise le bot Telegram
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
+// Initialise OpenAI via OpenRouter
 const openai = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
   baseURL: 'https://openrouter.ai/api/v1',
 });
 
-// ✅ Commande /start avec bouton de démarrage
+// ✅ Commande /start avec bouton
 bot.start((ctx) => {
-  ctx.reply("👋 Bienvenue sur UsomiBot !\nClique sur le bouton ci-dessous pour le réveiller :", Markup.inlineKeyboard([
-    Markup.button.callback("🚀 Démarrer UsomiBot", "wake_up")
-  ]));
+  ctx.reply(
+    "👋 Salut ! Je suis UsomiBot, ton assistant connecté à OpenRouter.\n\nClique sur le bouton ci-dessous pour me démarrer 🚀",
+    Markup.inlineKeyboard([
+      [Markup.button.callback("🚀 Démarrer le bot", "ping_backend")]
+    ])
+  );
 });
 
-// ✅ Quand l'utilisateur clique sur le bouton
-bot.action("wake_up", async (ctx) => {
-  await ctx.answerCbQuery(); // Retire le "chargement" sur le bouton
-  await ctx.reply("⏳ Réveil du serveur…");
-
-  // Réveil du backend Render
+// ✅ Quand l'utilisateur clique sur "Démarrer le bot"
+bot.action("ping_backend", async (ctx) => {
+  await ctx.editMessageText("⏳ Lancement en cours...");
   try {
-    await fetch('https://usomi.onrender.com/');
+    await fetch("https://usomi.onrender.com/");
+
+    // Affiche une progression simulée
+    const steps = ["▁▁▁▁▁", "▃▁▁▁▁", "▃▃▁▁▁", "▃▃▃▁▁", "▃▃▃▃▁", "▃▃▃▃▃"];
+    for (let i = 0; i < steps.length; i++) {
+      await ctx.reply(`🔄 Progression : ${steps[i]}`);
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    await ctx.reply("✅ Bot prêt ! Envoie-moi une question.");
   } catch (err) {
-    return ctx.reply("⚠️ Serveur Render injoignable.");
-  }
-
-  // Barre de progression simulée
-  const progress = [
-    "▁▁▁▁▁ Initialisation...",
-    "▂▁▁▁▁ Chargement...",
-    "▂▃▁▁▁ Chargement...",
-    "▂▃▅▁▁ Préparation...",
-    "▂▃▅▆▁ Presque prêt...",
-    "▂▃▅▆▇ Finalisation...",
-    "✅ UsomiBot est prêt à répondre !"
-  ];
-
-  for (const step of progress) {
-    await ctx.reply(step);
-    await new Promise(resolve => setTimeout(resolve, 500)); // délai de 0.5s
+    console.error("Erreur de réveil du backend :", err.message);
+    await ctx.reply("⚠️ Impossible de contacter le serveur. Réessaie plus tard.");
   }
 });
 
-// ✅ Réponse à tout message texte
-bot.on("text", async (ctx) => {
+// 📩 Répond aux messages utilisateurs
+bot.on('text', async (ctx) => {
   const userMessage = ctx.message.text;
-
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: 'gpt-4o-mini',
       messages: [
-        { role: "system", content: "Tu es un assistant intelligent et amical." },
-        { role: "user", content: userMessage }
+        { role: 'system', content: "Tu es un assistant intelligent et amical." },
+        { role: 'user', content: userMessage },
       ],
       max_tokens: 1000,
       temperature: 0.8,
@@ -72,18 +67,23 @@ bot.on("text", async (ctx) => {
   }
 });
 
-// ✅ Express.js pour Render
+// ✅ Express pour que Render maintienne le serveur actif
 const app = express();
 const port = process.env.PORT || 10000;
 
 app.get("/", (req, res) => {
-  res.send("✅ Serveur UsomiBot en ligne !");
+  res.send("✅ Serveur en ligne.");
 });
 
 app.listen(port, () => {
   console.log(`✅ Serveur lancé sur le port ${port}`);
 });
 
-// 🔚 Gestion des signaux système
+// 🔚 Pour bien arrêter le bot
 process.once("SIGINT", () => bot.stop("SIGINT"));
 process.once("SIGTERM", () => bot.stop("SIGTERM"));
+
+// ✅ Lance le bot
+bot.launch().then(() => {
+  console.log("🤖 mwalimu andruze est prêt !");
+});
