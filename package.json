@@ -1,25 +1,19 @@
 {
-    "name": "telegram-openai-bot",
-    "version": "1.0.0",
-    "description": "Un bot Telegram connecté à OpenAI avec Node.js",
-    "main": "index.js",
-    "type": "module",
-    "scripts": {
-      "start": "node index.js"
-    },
-    "keywords": [
-      "telegram",
-      "bot",
-      "openai",
-      "nodejs",
-      "telegraf"
-    ],
-    "author": "Ton Nom",
-    "license": "MIT",
-    "dependencies": {
-      "dotenv": "^16.3.1",
-      "openai": "^4.20.0",
-      "telegraf": "^4.12.2"
-    }
+  "name": "usomi",
+  "version": "1.0.0",
+  "description": "Bot Telegram avec OpenAI et Express (webhook compatible Render)",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "express": "^4.19.2",
+    "openai": "^4.25.0",
+    "telegraf": "^4.17.0"
   }
-  
+}
