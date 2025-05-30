@@ -6,11 +6,15 @@ import express from 'express';
 config();
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENROUTER_API_KEY,         // clé OpenRouter ici
+  baseURL: 'https://openrouter.ai/api/v1',        // URL OpenRouter
+});
 
 // ✅ Commande /start
 bot.start((ctx) => {
-  ctx.reply("👋 Salut ! Je suis un bot connecté à OpenAI. Pose-moi une question.");
+  ctx.reply("👋 Salut ! Je suis un bot connecté à OpenRouter. Pose-moi une question.");
 });
 
 // 📩 Répond aux messages
@@ -19,7 +23,7 @@ bot.on('text', async (ctx) => {
 
   try {
     const completion = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-4o-mini',    // modèle compatible OpenRouter (exemple)
       messages: [
         { role: 'system', content: "Tu es un assistant intelligent et amical." },
         { role: 'user', content: userMessage },
@@ -31,8 +35,8 @@ bot.on('text', async (ctx) => {
     const reply = completion.choices[0].message.content;
     ctx.reply(reply);
   } catch (error) {
-    console.error("❌ Erreur OpenAI :", error.response?.data || error.message);
-    ctx.reply("⚠️ Une erreur est survenue avec OpenAI. " + (error.response?.data?.error?.message || error.message));
+    console.error("❌ Erreur OpenRouter :", error.response?.data || error.message);
+    ctx.reply("⚠️ Une erreur est survenue avec OpenRouter. " + (error.response?.data?.error?.message || error.message));
   }
 });
 
