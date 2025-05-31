@@ -59,7 +59,7 @@ bot.action("ping_backend", async (ctx) => {
       await new Promise(res => setTimeout(res, 400));
     }
 
-    await ctx.reply("✅ Bot prêt ! Pose ta question.");
+    await ctx.reply("✅Bonjour ! moi c'est Rushize Comment puis-je vous aider aujourd'hui ? Avez-vous une question ou un sujet en particulier en tête ?.");
   } catch (err) {
     console.error("❌ Erreur de ping :", err.message);
     await ctx.reply("⚠️ Erreur lors du réveil du bot.");
